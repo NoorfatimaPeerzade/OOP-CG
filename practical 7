@@ -1,135 +1,130 @@
-#include <graphics.h>
-#include <iostream>
-#include <math.h>
-using namespace std;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Scanner;
 
-// Function to set pixel with different styles
-void drawStyledPixel(int x, int y, int xc, int yc, int style, int count) {
-    if (style == 1) // Solid
-        putpixel(xc + x, yc + y, WHITE);
-    else if (style == 2 && count % 3 == 0) // Dotted
-        putpixel(xc + x, yc + y, WHITE);
-    else if (style == 3 && count % 10 < 5) // Dashed
-        putpixel(xc + x, yc + y, WHITE);
-}
+public class CircleDrawing extends JPanel {
+    private int xc, yc, r, style, choice;
 
-// DDA Circle Drawing Algorithm (Approximation)
-void DDACircle(int xc, int yc, int r, int style) {
-    float x = 0, y = r;
-    float step = 1.0 / r;
-    float theta = 0;
-    int count = 0;
-
-    while (theta <= 2 * M_PI) {
-        x = r * cos(theta);
-        y = r * sin(theta);
-        drawStyledPixel(round(x), round(y), xc, yc, style, count++);
-        theta += step;
+    public CircleDrawing(int xc, int yc, int r, int style, int choice) {
+        this.xc = xc;
+        this.yc = yc;
+        this.r = r;
+        this.style = style;
+        this.choice = choice;
     }
-}
 
-// Bresenham’s Circle Drawing Algorithm
-void BresenhamCircle(int xc, int yc, int r, int style) {
-    int x = 0, y = r;
-    int d = 3 - 2 * r;
-    int count = 0;
-
-    while (x <= y) {
-        drawStyledPixel(x, y, xc, yc, style, count++);
-        drawStyledPixel(y, x, xc, yc, style, count++);
-        drawStyledPixel(-x, y, xc, yc, style, count++);
-        drawStyledPixel(-y, x, xc, yc, style, count++);
-        drawStyledPixel(-x, -y, xc, yc, style, count++);
-        drawStyledPixel(-y, -x, xc, yc, style, count++);
-        drawStyledPixel(x, -y, xc, yc, style, count++);
-        drawStyledPixel(y, -x, xc, yc, style, count++);
-
-        if (d < 0)
-            d += 4 * x + 6;
-        else {
-            d += 4 * (x - y) + 10;
-            y--;
-        }
-        x++;
+    private void drawStyledPixel(Graphics g, int x, int y, int count) {
+        if (style == 1) // Solid
+            g.drawLine(xc + x, yc + y, xc + x, yc + y);
+        else if (style == 2 && count % 3 == 0) // Dotted
+            g.drawLine(xc + x, yc + y, xc + x, yc + y);
+        else if (style == 3 && count % 10 < 5) // Dashed
+            g.drawLine(xc + x, yc + y, xc + x, yc + y);
     }
-}
 
-// Midpoint Circle Drawing Algorithm
-void MidpointCircle(int xc, int yc, int r, int style) {
-    int x = 0, y = r;
-    int p = 1 - r;
-    int count = 0;
+    private void drawDDACircle(Graphics g) {
+        float step = 1.0f / r;
+        float theta = 0;
+        int count = 0;
 
-    while (x <= y) {
-        drawStyledPixel(x, y, xc, yc, style, count++);
-        drawStyledPixel(y, x, xc, yc, style, count++);
-        drawStyledPixel(-x, y, xc, yc, style, count++);
-        drawStyledPixel(-y, x, xc, yc, style, count++);
-        drawStyledPixel(-x, -y, xc, yc, style, count++);
-        drawStyledPixel(-y, -x, xc, yc, style, count++);
-        drawStyledPixel(x, -y, xc, yc, style, count++);
-        drawStyledPixel(y, -x, xc, yc, style, count++);
-
-        x++;
-        if (p < 0)
-            p += 2 * x + 1;
-        else {
-            y--;
-            p += 2 * (x - y) + 1;
+        while (theta <= 2 * Math.PI) {
+            int x = Math.round((float)(r * Math.cos(theta)));
+            int y = Math.round((float)(r * Math.sin(theta)));
+            drawStyledPixel(g, x, y, count++);
+            theta += step;
         }
     }
-}
 
-// Menu function
-int main() {
-    int gd = DETECT, gm;
-    initgraph(&gd, &gm, "");
+    private void drawBresenhamCircle(Graphics g) {
+        int x = 0, y = r;
+        int d = 3 - 2 * r;
+        int count = 0;
 
-    int choice, style, xc, yc, r;
-    do {
-        cleardevice();
-        cout << "\n===== Circle Drawing Algorithms =====";
-        cout << "\n1. DDA Circle";
-        cout << "\n2. Bresenham’s Circle";
-        cout << "\n3. Midpoint Circle";
-        cout << "\n4. Exit";
-        cout << "\nEnter choice: ";
-        cin >> choice;
+        while (x <= y) {
+            int[] dx = {x, y, -x, -y, -x, -y, x, y};
+            int[] dy = {y, x, y, x, -y, -x, -y, -x};
+            for (int i = 0; i < 8; i++) drawStyledPixel(g, dx[i], dy[i], count++);
+            if (d < 0)
+                d += 4 * x + 6;
+            else {
+                d += 4 * (x - y) + 10;
+                y--;
+            }
+            x++;
+        }
+    }
 
-        if (choice == 4) break;
+    private void drawMidpointCircle(Graphics g) {
+        int x = 0, y = r;
+        int p = 1 - r;
+        int count = 0;
 
-        cout << "\nEnter center (xc, yc): ";
-        cin >> xc >> yc;
-        cout << "Enter radius: ";
-        cin >> r;
+        while (x <= y) {
+            int[] dx = {x, y, -x, -y, -x, -y, x, y};
+            int[] dy = {y, x, y, x, -y, -x, -y, -x};
+            for (int i = 0; i < 8; i++) drawStyledPixel(g, dx[i], dy[i], count++);
+            x++;
+            if (p < 0)
+                p += 2 * x + 1;
+            else {
+                y--;
+                p += 2 * (x - y) + 1;
+            }
+        }
+    }
 
-        cout << "\nSelect style:";
-        cout << "\n1. Solid";
-        cout << "\n2. Dotted";
-        cout << "\n3. Dashed";
-        cout << "\nEnter style: ";
-        cin >> style;
-
-        cleardevice();
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
         switch (choice) {
-            case 1:
-                DDACircle(xc, yc, r, style);
-                break;
-            case 2:
-                BresenhamCircle(xc, yc, r, style);
-                break;
-            case 3:
-                MidpointCircle(xc, yc, r, style);
-                break;
-            default:
-                cout << "Invalid choice!";
+            case 1 -> drawDDACircle(g);
+            case 2 -> drawBresenhamCircle(g);
+            case 3 -> drawMidpointCircle(g);
+            default -> System.out.println("Invalid choice!");
         }
+    }
 
-        cout << "\nPress any key to continue...";
-        getch();
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int choice, style, xc, yc, r;
 
-    } while (choice != 4);
+        do {
+            System.out.println("\n===== Circle Drawing Algorithms =====");
+            System.out.println("1. DDA Circle");
+            System.out.println("2. Bresenham’s Circle");
+            System.out.println("3. Midpoint Circle");
+            System.out.println("4. Exit");
+            System.out.print("Enter choice: ");
+            choice = sc.nextInt();
 
-    closegraph();
-    return 0;
+            if (choice == 4) break;
+
+            System.out.print("Enter center (xc, yc): ");
+            xc = sc.nextInt();
+            yc = sc.nextInt();
+            System.out.print("Enter radius: ");
+            r = sc.nextInt();
+
+            System.out.println("\nSelect style:");
+            System.out.println("1. Solid");
+            System.out.println("2. Dotted");
+            System.out.println("3. Dashed");
+            System.out.print("Enter style: ");
+            style = sc.nextInt();
+
+            JFrame frame = new JFrame("Circle Drawing");
+            CircleDrawing panel = new CircleDrawing(xc, yc, r, style, choice);
+            frame.add(panel);
+            frame.setSize(800, 600);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setVisible(true);
+
+            System.out.println("Press Enter to continue...");
+            sc.nextLine(); // consume newline
+            sc.nextLine(); // wait for Enter
+
+            frame.dispose();
+        } while (choice != 4);
+    }
 }
